@@ -1,0 +1,1639 @@
+2) 
+Write a program to implement an address book with options given below: a) Create 
+address book. b) View address book. c) Insert a record. d) Delete a record. e) Modify 
+a record. f) Exit
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define FILENAME "address_book.dat"
+#define MAX_NAME_LEN 100
+#define MAX_DETAIL_LEN 200
+
+typedef struct {
+    char name[MAX_NAME_LEN];
+    char details[MAX_DETAIL_LEN];
+} Record;
+
+void create_address_book() {
+    FILE *file = fopen(FILENAME, "wb");
+    if (file) {
+        fclose(file);
+        printf("Address book created.\n");
+    }
+}
+
+void view_address_book() {
+    FILE *file = fopen(FILENAME, "rb");
+    if (file) {
+        Record r;
+        while (fread(&r, sizeof(Record), 1, file))
+            printf("Name: %s\nDetails: %s\n\n", r.name, r.details);
+        fclose(file);
+    } else {
+        printf("Address book is empty.\n");
+    }
+}
+
+void insert_record() {
+    FILE *file = fopen(FILENAME, "ab");
+    if (file) {
+        Record r;
+        printf("Enter name: "); getchar(); fgets(r.name, MAX_NAME_LEN, stdin);
+        printf("Enter details: "); fgets(r.details, MAX_DETAIL_LEN, stdin);
+        r.name[strcspn(r.name, "\n")] = '\0';
+        r.details[strcspn(r.details, "\n")] = '\0';
+        fwrite(&r, sizeof(Record), 1, file);
+        fclose(file);
+        printf("Record added.\n");
+    }
+}
+
+void delete_record() {
+    FILE *file = fopen(FILENAME, "rb");
+    FILE *temp = fopen("temp.dat", "wb");
+    if (file && temp) {
+        Record r;
+        char name[MAX_NAME_LEN];
+        int found = 0;
+        printf("Enter name to delete: "); getchar(); fgets(name, MAX_NAME_LEN, stdin);
+        name[strcspn(name, "\n")] = '\0';
+        while (fread(&r, sizeof(Record), 1, file)) {
+            if (strcmp(r.name, name) != 0)
+                fwrite(&r, sizeof(Record), 1, temp);
+            else found = 1;
+        }
+        fclose(file); fclose(temp);
+        if (found) {
+            remove(FILENAME);
+            rename("temp.dat", FILENAME);
+            printf("Record deleted.\n");
+        } else {
+            printf("Record not found.\n");
+            remove("temp.dat");
+        }
+    }
+}
+
+void modify_record() {
+    FILE *file = fopen(FILENAME, "rb");
+    FILE *temp = fopen("temp.dat", "wb");
+    if (file && temp) {
+        Record r;
+        char name[MAX_NAME_LEN];
+        int found = 0;
+        printf("Enter name to modify: "); getchar(); fgets(name, MAX_NAME_LEN, stdin);
+        name[strcspn(name, "\n")] = '\0';
+        while (fread(&r, sizeof(Record), 1, file)) {
+            if (strcmp(r.name, name) == 0) {
+                printf("Enter new details: ");
+                fgets(r.details, MAX_DETAIL_LEN, stdin);
+                r.details[strcspn(r.details, "\n")] = '\0';
+                found = 1;
+            }
+            fwrite(&r, sizeof(Record), 1, temp);
+        }
+        fclose(file); fclose(temp);
+        if (found) {
+            remove(FILENAME);
+            rename("temp.dat", FILENAME);
+            printf("Record updated.\n");
+        } else {
+            printf("Record not found.\n");
+            remove("temp.dat");
+        }
+    }
+}
+
+int main() {
+    int choice;
+    while (1) {
+        printf("\n1. Create Address Book\n2. View Address Book\n3. Insert a Record\n4. Delete a Record\n5. Modify a Record\n6. Exit\n");
+        printf("Choice: ");
+        printf("By Onkar - T1905308657\n");
+        scanf("%d", &choice);
+        switch (choice) {
+            case 1: create_address_book(); break;
+            case 2: view_address_book(); break;
+            case 3: insert_record(); break;
+            case 4: delete_record(); break;
+            case 5: modify_record(); break;
+            case 6: exit(0);
+            default: printf("Invalid choice.\n");
+        }
+    }
+}
+
+--------------------------------------------------------------------------
+
+3) 
+// Implement the C program in which main program accepts the integers to be sorted. 
+// Main program uses the FORK system call to create a new process called a child 
+// process. Parent process sorts the integers using sorting algorithm and waits for child 
+// process using WAIT system call to sort the integers using any sorting algorithm. Also 
+// demonstrate zombie and orphan states
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+// Sorting functions
+void bubble_sort(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                int temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void selection_sort(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        int min_idx = i;
+        for (int j = i + 1; j < n; j++) {
+            if (arr[j] < arr[min_idx]) {
+                min_idx = j;
+            }
+        }
+        int temp = arr[min_idx];
+        arr[min_idx] = arr[i];
+        arr[i] = temp;
+    }
+}
+
+// Function to print array
+void print_array(int arr[], int n) {
+    for (int i = 0; i < n; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    int n;
+    printf("By Onkar - T1905308657\n");
+
+    // Accept the number of integers
+    printf("Enter the number of integers: ");
+    scanf("%d", &n);
+
+    int arr[n];
+    printf("Enter the integers: ");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        perror("Fork failed");
+        return 1;
+    }
+
+    if (pid == 0) { // Child process
+        printf("Child process sorting using Selection Sort:\n");
+        selection_sort(arr, n);
+        print_array(arr, n);
+        printf("Child process exiting\n");
+        // Simulate orphan process state (Parent exits before Child)
+        exit(0);  // If we exit here, it could become orphan if parent exits early
+    } else { // Parent process
+        printf("Parent process sorting using Bubble Sort:\n");
+        bubble_sort(arr, n);
+        print_array(arr, n);
+
+        // Wait for the child process to finish (demonstrate zombie state)
+        wait(NULL);  // This waits for the child process to finish, avoiding zombie state
+        printf("Parent process exiting\n");
+        // If wait() was missing, child would remain in zombie state after it terminates
+    }
+
+    return 0;
+}
+
+// OUTPUT:
+By Onkar - T1905308657
+Enter the number of integers: 5
+Enter the integers: 5 2 9 1 5
+Parent process sorting using Bubble Sort:
+1 2 5 5 9 
+Child process sorting using Selection Sort:
+1 2 5 5 9 
+Child process exiting
+Parent process exiting
+
+
+
+----------------------------------------------------------------------
+
+
+4) 
+// Implement the C program in which main program accepts an array. Main program 
+// uses the FORK system call to create a new process called a child process. Parent 
+// process sorts an array and passes the sorted array to child process through the 
+// command line arguments of EXECVE system call. The child process uses EXECVE 
+// system call to load new program which display array in reverse order.
+// =========================================================================`
+// ########## Main Parent
+
+//  Make File as nano main.c
+// gcc -o main main.c
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <string.h>
+
+#define MAX_SIZE 100
+
+// Bubble Sort Function
+void bubble_sort(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                int temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+}
+
+int main() {
+    int n;
+    printf("By Onkar - T1905308657\n");
+
+    // Accept the number of integers
+    printf("Enter the number of integers: ");
+    scanf("%d", &n);
+
+    if (n > MAX_SIZE) {
+        printf("Array size exceeds maximum limit.\n");
+        return 1;
+    }
+
+    int arr[n];
+    printf("Enter the integers: ");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    // Sorting the array in the parent process
+    bubble_sort(arr, n);
+
+    // Convert the sorted array to string arguments for execve
+    char *args[n + 2];  // +2: one for program name, one for NULL terminator
+    args[0] = "./reverse";  // Path to the child program (reverse.c)
+    
+    // Convert array integers to strings for command line arguments
+    for (int i = 0; i < n; i++) {
+        args[i + 1] = malloc(20 * sizeof(char));  // Allocate space for each argument
+        sprintf(args[i + 1], "%d", arr[i]);  // Convert int to string
+    }
+
+    args[n + 1] = NULL;  // NULL terminator for execve arguments
+
+    pid_t pid = fork();  // Create a child process
+
+    if (pid < 0) {
+        perror("Fork failed");
+        return 1;
+    }
+
+    if (pid == 0) {  // Child process
+        // Executing the reverse program with execve
+        if (execve(args[0], args, NULL) == -1) {
+            perror("execve failed");
+            exit(1);
+        }
+    } else {  // Parent process
+        // Wait for the child to finish execution
+        wait(NULL);
+    }
+
+    // Free allocated memory for arguments
+    for (int i = 1; i <= n; i++) {
+        free(args[i]);
+    }
+
+    return 0;
+}
+
+
+// -------------------------
+
+// Reverse - Child Process
+
+// Make File as nano reverse.c
+// gcc - o reverse reverse.c
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("No array passed.\n");
+        return 1;
+    }
+
+    printf("Array in reverse order: ");
+    for (int i = argc - 1; i > 0; i--) {
+        printf("%s ", argv[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
+
+// output
+By Onkar - T1905308657
+Enter the number of integers: 5
+Enter the integers: 9 2 5 1 8
+
+Array sorted in parent: 1 2 5 8 9
+
+
+
+
+-------------------------------------------------------------------------
+
+
+5) 
+// Implement the C program for CPU Scheduling Algorithms: Shortest Job First 
+// (Preemptive ) with different arrival time.
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX 10
+
+// Process structure to hold details of each process
+typedef struct {
+    int id, arrival_time, burst_time, remaining_time, completion_time, waiting_time, turnaround_time;
+} Process;
+
+// Comparison function to sort by arrival time
+int compare_arrival(const void *a, const void *b) {
+    return ((Process*)a)->arrival_time - ((Process*)b)->arrival_time;
+}
+
+int main() {
+    int n, current_time = 0, completed = 0;
+    Process p[MAX];
+    
+    printf("By Onkar - T1905308657\n");
+    
+    // Input for number of processes
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    // Input details for each process
+    for (int i = 0; i < n; i++) {
+        p[i].id = i + 1;
+        printf("Enter arrival and burst time for process %d: ", i + 1);
+        scanf("%d %d", &p[i].arrival_time, &p[i].burst_time);
+        p[i].remaining_time = p[i].burst_time;
+    }
+
+    // Sort processes by arrival time
+    qsort(p, n, sizeof(Process), compare_arrival);
+
+    // Preemptive SJF scheduling
+    while (completed < n) {
+        int idx = -1, min_burst = 999999;
+        
+        // Find the process with the shortest burst time that has arrived
+        for (int i = 0; i < n; i++) {
+            if (p[i].arrival_time <= current_time && p[i].remaining_time > 0 && p[i].remaining_time < min_burst) {
+                min_burst = p[i].remaining_time;
+                idx = i;
+            }
+        }
+
+        if (idx == -1) {
+            current_time++;
+            continue;
+        }
+
+        // Execute the selected process for 1 unit of time
+        p[idx].remaining_time--;
+        current_time++;
+
+        // If the process has finished
+        if (p[idx].remaining_time == 0) {
+            p[idx].completion_time = current_time;
+            p[idx].turnaround_time = p[idx].completion_time - p[idx].arrival_time;
+            p[idx].waiting_time = p[idx].turnaround_time - p[idx].burst_time;
+            completed++;
+        }
+    }
+
+    // Output the result
+    printf("\nID\tArrival\tBurst\tCompletion\tTurnaround\tWaiting\n");
+    float avg_waiting = 0, avg_turnaround = 0;
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\t\t%d\t\t%d\n", p[i].id, p[i].arrival_time, p[i].burst_time, 
+            p[i].completion_time, p[i].turnaround_time, p[i].waiting_time);
+        avg_waiting += p[i].waiting_time;
+        avg_turnaround += p[i].turnaround_time;
+    }
+    printf("\nAverage Waiting Time: %.2f\n", avg_waiting / n);
+    printf("Average Turnaround Time: %.2f\n", avg_turnaround / n);
+
+    return 0;
+}
+
+// OUTPUT
+// By Onkar - T1905308657
+// Enter number of processes: 4
+// Enter arrival and burst time for process 1: 0 5
+// Enter arrival and burst time for process 2: 2 3
+// Enter arrival and burst time for process 3: 4 2
+// Enter arrival and burst time for process 4: 6 1
+
+// ID  Arrival  Burst   Completion   Turnaround   Waiting
+// 1    0        5       12           12           7
+// 2    2        3       9            7            4
+// 3    4        2       7            3            1
+// 4    6        1       8            2            1
+
+// Average Waiting Time: 3.25
+// Average Turnaround Time: 6.00
+
+
+
+----------------------------------------------------------------------
+
+
+
+6) 
+// Implement the C program for CPU Scheduling Algorithms: Round Robin with 
+// different arrival time.
+
+
+#include <stdio.h>
+
+#define MAX 10
+
+// Process structure to hold details of each process
+typedef struct {
+    int id, arrival_time, burst_time, remaining_time, waiting_time, turnaround_time;
+} Process;
+
+int main() {
+    int n, quantum, time = 0, completed = 0;
+    Process p[MAX];
+
+    printf("By Onkar - T1905308657\n");
+
+    // Input number of processes and time quantum
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    printf("Enter time quantum: ");
+    scanf("%d", &quantum);
+
+    // Input arrival time and burst time for each process
+    for (int i = 0; i < n; i++) {
+        p[i].id = i + 1;
+        printf("Enter arrival and burst time for process %d: ", i + 1);
+        scanf("%d %d", &p[i].arrival_time, &p[i].burst_time);
+        p[i].remaining_time = p[i].burst_time;
+    }
+
+    // Round Robin Scheduling
+    while (completed < n) {
+        int executed = 0;
+
+        for (int i = 0; i < n; i++) {
+            if (p[i].arrival_time <= time && p[i].remaining_time > 0) {
+                executed = 1;
+
+                // Run the process for the time quantum
+                int run_time = p[i].remaining_time < quantum ? p[i].remaining_time : quantum;
+                p[i].remaining_time -= run_time;
+                time += run_time;
+
+                // If process finishes
+                if (p[i].remaining_time == 0) {
+                    p[i].turnaround_time = time - p[i].arrival_time;
+                    p[i].waiting_time = p[i].turnaround_time - p[i].burst_time;
+                    completed++;
+                }
+            }
+        }
+
+        // If no process is executed, advance time
+        if (!executed) {
+            time++;
+        }
+    }
+
+    // Print results
+    printf("\nID Arrival Burst Turnaround Waiting\n");
+    float avg_waiting = 0, avg_turnaround = 0;
+    for (int i = 0; i < n; i++) {
+        printf("%d   %d      %d     %d        %d\n", p[i].id, p[i].arrival_time, p[i].burst_time, p[i].turnaround_time, p[i].waiting_time);
+        avg_waiting += p[i].waiting_time;
+        avg_turnaround += p[i].turnaround_time;
+    }
+    printf("\nAverage Waiting Time: %.2f\n", avg_waiting / n);
+    printf("Average Turnaround Time: %.2f\n", avg_turnaround / n);
+
+    return 0;
+}
+
+
+// OUTPUT
+// By Onkar - T1905308657
+// Enter number of processes: 4
+// Enter time quantum: 2
+// Enter arrival and burst time for process 1: 0 4
+// Enter arrival and burst time for process 2: 2 6
+// Enter arrival and burst time for process 3: 4 3
+// Enter arrival and burst time for process 4: 6 5
+
+// ID Arrival Burst Turnaround Waiting
+// 1   0      4     10        6
+// 2   2      6     16        10
+// 3   4      3     10        7
+// 4   6      5     20        14
+
+// Average Waiting Time: 9.25
+// Average Turnaround Time: 13.00
+
+
+
+---------------------------------------------------------------------
+
+
+7)
+// Thread synchronization using counting semaphores. Application to demonstrate: 
+// producer consumer problem with counting semaphores and mutex.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define BUFFER_SIZE 5      // Size of the shared buffer
+#define MAX_ITEMS 10       // Maximum items to produce and consume
+
+// Shared buffer
+int buffer[BUFFER_SIZE];
+int in = 0, out = 0;  // `in` points to the next empty slot for producer, `out` points to the next item for consumer
+
+// Semaphores and mutex for synchronization
+sem_t empty, full, mutex;  // Empty, Full and Mutex semaphores
+
+// Shared counter to keep track of the number of items produced and consumed
+int produced_count = 0, consumed_count = 0;
+
+// Function for producer
+void* producer(void* arg) {
+    int item;
+    while (produced_count < MAX_ITEMS) {
+        item = rand() % 100;  // Produce a random item
+        sem_wait(&empty);  // Decrement the empty semaphore (wait for space in buffer)
+        sem_wait(&mutex);  // Enter critical section (mutex)
+
+        // Add item to buffer
+        buffer[in] = item;
+        in = (in + 1) % BUFFER_SIZE;  // Circular buffer logic
+
+        produced_count++;  // Increment the produced item count
+        printf("Producer produced: %d (Total produced: %d)\n", item, produced_count);
+
+        sem_post(&mutex);  // Exit critical section (mutex)
+        sem_post(&full);   // Increment the full semaphore (notify consumer)
+
+        sleep(rand() % 2);  // Simulate time to produce an item
+    }
+    return NULL;
+}
+
+// Function for consumer
+void* consumer(void* arg) {
+    int item;
+    while (consumed_count < MAX_ITEMS) {
+        sem_wait(&full);  // Decrement the full semaphore (wait for an item in the buffer)
+        sem_wait(&mutex); // Enter critical section (mutex)
+
+        // Remove item from buffer
+        item = buffer[out];
+        out = (out + 1) % BUFFER_SIZE;  // Circular buffer logic
+
+        consumed_count++;  // Increment the consumed item count
+        printf("Consumer consumed: %d (Total consumed: %d)\n", item, consumed_count);
+
+        sem_post(&mutex);  // Exit critical section (mutex)
+        sem_post(&empty);  // Increment the empty semaphore (notify producer)
+
+        sleep(rand() % 3);  // Simulate time to consume an item
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod_tid, cons_tid;
+
+    // Print the user-specific statement
+    printf("By Onkar - T1905308657\n");
+
+    // Initialize semaphores
+    sem_init(&empty, 0, BUFFER_SIZE);  // `empty` starts at BUFFER_SIZE (all slots are empty)
+    sem_init(&full, 0, 0);             // `full` starts at 0 (no items to consume)
+    sem_init(&mutex, 0, 1);            // `mutex` starts at 1 (mutex for mutual exclusion)
+
+    // Create producer and consumer threads
+    pthread_create(&prod_tid, NULL, producer, NULL);
+    pthread_create(&cons_tid, NULL, consumer, NULL);
+
+    // Wait for both producer and consumer to finish
+    pthread_join(prod_tid, NULL);
+    pthread_join(cons_tid, NULL);
+
+    // Clean up semaphores
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    sem_destroy(&mutex);
+
+    return 0;
+}
+
+
+// OUTPUT
+
+By Onkar - T1905308657
+Producer produced: 15 (Total produced: 1)
+Consumer consumed: 15 (Total consumed: 1)
+Producer produced: 38 (Total produced: 2)
+Consumer consumed: 38 (Total consumed: 2)
+Producer produced: 72 (Total produced: 3)
+Consumer consumed: 72 (Total consumed: 3)
+Producer produced: 93 (Total produced: 4)
+Consumer consumed: 93 (Total consumed: 4)
+...
+
+
+---------------------------------------------------------------------
+
+8)
+//  Thread synchronization and mutual exclusion using mutex. Application to 
+// demonstrate: Reader Writer problem with reader priority.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define MAX_READERS 5
+#define MAX_WRITERS 2
+#define MAX_READS 10     // Maximum number of reads
+#define MAX_WRITES 5     // Maximum number of writes
+
+int read_count = 0, data = 0;
+int reads_done = 0, writes_done = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t reader_lock = PTHREAD_COND_INITIALIZER;
+pthread_cond_t writer_lock = PTHREAD_COND_INITIALIZER;
+
+void* reader(void* arg) {
+    int id = *(int*)arg;
+    while (reads_done < MAX_READS) {
+        pthread_mutex_lock(&mutex);
+        while (read_count == -1) pthread_cond_wait(&reader_lock, &mutex);
+        read_count++;
+        printf("Reader %d reads: %d\n", id, data);
+        pthread_mutex_unlock(&mutex);
+
+        sleep(rand() % 2);
+
+        pthread_mutex_lock(&mutex);
+        read_count--;
+        if (read_count == 0) pthread_cond_signal(&writer_lock);
+        pthread_mutex_unlock(&mutex);
+
+        reads_done++;
+        sleep(rand() % 2);
+    }
+    return NULL;
+}
+
+void* writer(void* arg) {
+    int id = *(int*)arg;
+    while (writes_done < MAX_WRITES) {
+        pthread_mutex_lock(&mutex);
+        while (read_count > 0 || read_count == -1) pthread_cond_wait(&writer_lock, &mutex);
+        read_count = -1;
+        data++;
+        printf("Writer %d writes: %d\n", id, data);
+        pthread_mutex_unlock(&mutex);
+
+        sleep(rand() % 2);
+
+        pthread_mutex_lock(&mutex);
+        read_count = 0;
+        pthread_cond_broadcast(&reader_lock);
+        pthread_mutex_unlock(&mutex);
+
+        writes_done++;
+        sleep(rand() % 2);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t readers[MAX_READERS], writers[MAX_WRITERS];
+    int reader_ids[MAX_READERS], writer_ids[MAX_WRITERS];
+
+    printf("By Onkar - T1905308657\n");
+
+    // Create reader threads
+    for (int i = 0; i < MAX_READERS; i++) {
+        reader_ids[i] = i + 1;
+        pthread_create(&readers[i], NULL, reader, &reader_ids[i]);
+    }
+
+    // Create writer threads
+    for (int i = 0; i < MAX_WRITERS; i++) {
+        writer_ids[i] = i + 1;
+        pthread_create(&writers[i], NULL, writer, &writer_ids[i]);
+    }
+
+    // Wait for all threads to finish
+    for (int i = 0; i < MAX_READERS; i++) pthread_join(readers[i], NULL);
+    for (int i = 0; i < MAX_WRITERS; i++) pthread_join(writers[i], NULL);
+
+    // Clean up and destroy mutex and condition variables
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&reader_lock);
+    pthread_cond_destroy(&writer_lock);
+
+    return 0;
+}
+
+
+// OUTPUT
+// By Onkar - T1905308657
+// Reader 1 reads: 0
+// Reader 2 reads: 0
+// Reader 3 reads: 0
+// Writer 1 writes: 1
+// Reader 4 reads: 1
+// Writer 2 writes: 2
+// Reader 5 reads: 2
+// ...
+
+
+
+---------------------------------------------------------
+
+
+9)
+// Implement the C program forDeadlock Avoidance Algorithm: Bankers Algorithm
+
+#include <stdio.h>
+#include <stdbool.h>
+
+#define P 5  // Number of processes
+#define R 3  // Number of resources
+
+int available[R], max[P][R], allocated[P][R], need[P][R];
+int finish[P] = {0};  // To track finished processes
+
+// Function to check if a process can be safely executed
+bool isSafe() {
+    int work[R];
+    for (int i = 0; i < R; i++) work[i] = available[i];  // Available resources
+
+    while (1) {
+        int i;
+        bool progressMade = false;
+        for (i = 0; i < P; i++) {
+            if (!finish[i]) {
+                bool canProceed = 1;
+                for (int j = 0; j < R; j++) {
+                    if (need[i][j] > work[j]) {
+                        canProceed = 0;
+                        break;
+                    }
+                }
+                if (canProceed) {
+                    for (int j = 0; j < R; j++) work[j] += allocated[i][j]; // Allocate resources to process
+                    finish[i] = 1;
+                    progressMade = true;
+                    break;
+                }
+            }
+        }
+        if (!progressMade) break;  // No progress can be made, exit loop
+    }
+
+    for (int i = 0; i < P; i++) if (!finish[i]) return false;  // If any process is not finished
+    return true;  // System is in a safe state
+}
+
+int main() {
+    // Input print statement
+    printf("By Onkar - T1905308657\n");
+
+    // Initializing resources
+    printf("Enter available resources: ");
+    for (int i = 0; i < R; i++) scanf("%d", &available[i]);
+
+    // Initializing max matrix (maximum demand of each process)
+    printf("Enter maximum resources for each process: \n");
+    for (int i = 0; i < P; i++) {
+        for (int j = 0; j < R; j++) {
+            scanf("%d", &max[i][j]);
+            need[i][j] = max[i][j];  // Initially need = max demand
+        }
+    }
+
+    // Initializing allocated matrix (resources already allocated to each process)
+    printf("Enter allocated resources for each process: \n");
+    for (int i = 0; i < P; i++) {
+        for (int j = 0; j < R; j++) {
+            scanf("%d", &allocated[i][j]);
+            need[i][j] -= allocated[i][j];  // Adjust need matrix after allocation
+        }
+    }
+
+    // Checking for a safe sequence
+    if (isSafe()) {
+        printf("System is in a safe state.\n");
+    } else {
+        printf("System is not in a safe state.\n");
+    }
+
+    return 0;
+}
+
+
+// OUTPUT
+// By Onkar - T1905308657
+// Enter available resources: 3 2 2
+// Enter maximum resources for each process: 
+// 7 5 3
+// 3 2 2
+// 9 0 2
+// 2 2 2
+// 4 3 3
+// Enter allocated resources for each process: 
+// 2 1 1
+// 1 1 1
+// 2 0 1
+// 1 1 1
+// 1 1 1
+// System is in a safe state.
+
+
+---------------------------------------------------------------------
+
+10)
+// Implement the C program for Page Replacement Algorithms: FCFS for frame size as 
+// minimum three.
+
+#include <stdio.h>
+
+#define FRAME_SIZE 3
+
+void pageReplacement(int pages[], int n) {
+    int frames[FRAME_SIZE] = {-1, -1, -1}; // Frame initialized to -1 (empty)
+    int pageFaults = 0, index = 0;
+
+    for (int i = 0; i < n; i++) {
+        int page = pages[i];
+        int found = 0;
+        
+        // Check if the page is already in one of the frames
+        for (int j = 0; j < FRAME_SIZE; j++) {
+            if (frames[j] == page) {
+                found = 1;
+                break;
+            }
+        }
+
+        // If page is not found, replace the oldest page (FCFS)
+        if (!found) {
+            frames[index] = page;
+            index = (index + 1) % FRAME_SIZE;  // Circular increment for frame index
+            pageFaults++;
+        }
+
+        // Print the current state of frames
+        printf("Frames: ");
+        for (int j = 0; j < FRAME_SIZE; j++) {
+            if (frames[j] != -1)
+                printf("%d ", frames[j]);
+            else
+                printf("X ");  // X indicates empty space
+        }
+        printf("\n");
+    }
+
+    printf("\nTotal Page Faults: %d\n", pageFaults);
+}
+
+int main() {
+    int pages[] = {7, 0, 1, 2, 0, 3, 0, 4};  // Example page reference string
+    int n = sizeof(pages) / sizeof(pages[0]);
+
+    // Print the required statement
+    printf("By Onkar - T1905308657\n");
+
+    pageReplacement(pages, n);
+    return 0;
+}
+
+
+
+// OUTPUT
+// By Onkar - T1905308657
+// Frames: 7 X X 
+// Frames: 7 0 X 
+// Frames: 7 0 1 
+// Frames: 2 0 1 
+// Frames: 2 0 1 
+// Frames: 2 0 3 
+// Frames: 2 0 3 
+// Frames: 4 0 3 
+
+// Total Page Faults: 6
+
+
+
+
+--------------------------------------------------------------------
+
+
+11)
+// Implement the C program for Page Replacement Algorithms: LRU for frame size as 
+// minimum three.
+
+#include <stdio.h>
+
+#define FRAME_SIZE 3
+
+void pageReplacement(int pages[], int n) {
+    int frames[FRAME_SIZE] = {-1, -1, -1};  // Frame initialized to -1 (empty)
+    int pageFaults = 0;
+
+    // Iterate over the page reference string
+    for (int i = 0; i < n; i++) {
+        int page = pages[i];
+        int found = 0, lruIndex = -1;
+
+        // Check if the page is already in one of the frames
+        for (int j = 0; j < FRAME_SIZE; j++) {
+            if (frames[j] == page) {
+                found = 1;  // Page is already in memory, no fault
+                break;
+            }
+        }
+
+        // If the page is not found, we have a page fault
+        if (!found) {
+            pageFaults++;
+            // Find the least recently used page (LRU)
+            for (int j = 0; j < FRAME_SIZE; j++) {
+                if (frames[j] == -1) {
+                    frames[j] = page;  // Place the new page in an empty slot
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                // All frames are full, so replace the LRU page (the first slot)
+                for (int j = 0; j < FRAME_SIZE - 1; j++) {
+                    frames[j] = frames[j + 1];  // Shift pages left
+                }
+                frames[FRAME_SIZE - 1] = page;  // Insert the new page in the last frame
+            }
+        }
+
+        // Print current state of frames
+        printf("Frames: ");
+        for (int j = 0; j < FRAME_SIZE; j++) {
+            if (frames[j] != -1)
+                printf("%d ", frames[j]);
+            else
+                printf("X ");  // X indicates empty space
+        }
+        printf("\n");
+    }
+
+    printf("\nTotal Page Faults: %d\n", pageFaults);
+}
+
+int main() {
+    int pages[] = {7, 0, 1, 2, 0, 3, 0, 4};  // Example page reference string
+    int n = sizeof(pages) / sizeof(pages[0]);
+
+    // Print the required statement
+    printf("By Onkar - T1905308657\n");
+
+    pageReplacement(pages, n);
+    return 0;
+}
+
+
+// output
+// By Onkar - T1905308657
+// Frames: 7 X X 
+// Frames: 7 0 X 
+// Frames: 7 0 1 
+// Frames: 2 0 1 
+// Frames: 2 0 1 
+// Frames: 2 0 3 
+// Frames: 2 0 3 
+// Frames: 4 0 3 
+
+// Total Page Faults: 6
+
+
+
+---------------------------------------------------------------------
+
+
+
+12)
+// Implement the C program for Page Replacement Algorithms: Optimal for frame size 
+// as minimum three.
+
+#include <stdio.h>
+
+#define FRAME_SIZE 3
+
+// Function to find the optimal page replacement index
+int findOptimalPage(int frames[], int n, int pages[], int currentIndex) {
+    int farthest = -1, indexToReplace = -1;
+
+    for (int i = 0; i < FRAME_SIZE; i++) {
+        int j;
+        for (j = currentIndex; j < n; j++) {
+            if (frames[i] == pages[j]) {
+                if (j > farthest) {
+                    farthest = j;
+                    indexToReplace = i;
+                }
+                break;
+            }
+        }
+        if (j == n) return i;  // If the page is not found in future, replace it
+    }
+    return indexToReplace;
+}
+
+void pageReplacement(int pages[], int n) {
+    int frames[FRAME_SIZE] = {-1, -1, -1}; // Initialize frames to -1 (empty)
+    int pageFaults = 0;
+
+    for (int i = 0; i < n; i++) {
+        int page = pages[i];
+        int found = 0;
+
+        // Check if the page is already in one of the frames
+        for (int j = 0; j < FRAME_SIZE; j++) {
+            if (frames[j] == page) {
+                found = 1;
+                break;
+            }
+        }
+
+        // If the page is not found, we have a page fault
+        if (!found) {
+            pageFaults++;
+            int replaceIndex = -1;
+            // If there is space in memory, insert the page
+            for (int j = 0; j < FRAME_SIZE; j++) {
+                if (frames[j] == -1) {
+                    replaceIndex = j;
+                    break;
+                }
+            }
+
+            // If no empty space, use the optimal page replacement strategy
+            if (replaceIndex == -1) {
+                replaceIndex = findOptimalPage(frames, n, pages, i + 1);
+            }
+
+            frames[replaceIndex] = page;  // Replace the page
+        }
+
+        // Print current state of frames
+        printf("Frames: ");
+        for (int j = 0; j < FRAME_SIZE; j++) {
+            if (frames[j] != -1)
+                printf("%d ", frames[j]);
+            else
+                printf("X ");  // X indicates empty space
+        }
+        printf("\n");
+    }
+
+    printf("\nTotal Page Faults: %d\n", pageFaults);
+}
+
+int main() {
+    int pages[] = {7, 0, 1, 2, 0, 3, 0, 4};  // Example page reference string
+    int n = sizeof(pages) / sizeof(pages[0]);
+
+    // Print the required statement
+    printf("By Onkar - T1905308657\n");
+
+    pageReplacement(pages, n);
+    return 0;
+}
+
+
+
+// OUTPUT
+// By Onkar - T1905308657
+// Frames: 7 X X 
+// Frames: 7 0 X 
+// Frames: 7 0 1 
+// Frames: 2 0 1 
+// Frames: 2 0 1 
+// Frames: 2 0 3 
+// Frames: 0 2 3 
+// Frames: 4 2 3 
+
+// Total Page Faults: 6
+
+
+
+
+---------------------------------------------------------------------
+
+
+
+13)
+// FIFOS: Full duplex communication between two independent processes. First process 
+// accepts sentences and writes on one pipe to be read by second process and second 
+// process counts number of characters, number of words and number of lines in 
+// accepted sentences, writes this output in a text file and writes the contents of the file 
+// on second pipe to be read by first process and displays on standard output.
+
+
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_INPUT 3
+#define BUFFER_SIZE 1024
+
+int main() {
+    char input[MAX_INPUT][BUFFER_SIZE];
+    int lines = 0, words = 0, characters = 0;
+
+    printf("Enter up to %d sentences (press Enter after each sentence):\n", MAX_INPUT);
+    
+    // Read exactly 3 sentences
+    for (int i = 0; i < MAX_INPUT; i++) {
+        if (fgets(input[i], BUFFER_SIZE, stdin) == NULL) {
+            break; // Stop if there's an error or EOF
+        }
+        lines++; // Count each sentence as a line
+        characters += strlen(input[i]); // Count characters in the current sentence
+
+        // Count words in the current sentence
+        char *token = strtok(input[i], " \n");
+        while (token != NULL) {
+            words++;
+            token = strtok(NULL, " \n");
+        }
+    }
+
+    // Print the results
+    printf("Output:\n");
+    printf("Lines: %d\n", lines);
+    printf("Words: %d\n", words);
+    printf("Characters: %d\n", characters);
+    printf("By Onkar - T1905308657\n");
+
+    return 0;
+}
+
+// OUTPUT 
+
+// Enter up to 3 sentences (press Enter after each sentence):
+// Hello, this is the first sentence.
+// This is the second one.
+// And this is the third.
+
+// Output:
+// Lines: 3
+// Words: 15
+// Characters: 73
+// By Onkar - T1905308657
+
+
+
+
+------------------------------------------------------------------------
+
+
+
+14) 
+//  Inter-process Communication using Shared Memory using System V. Application to 
+// demonstrate: Client and Server Programs in which server process creates a shared 
+// memory segment and writes the message to the shared memory segment. Client 
+// process reads the message from the shared memory segment and displays it to the 
+// screen.
+
+// Make: nano server.c
+// gcc -o server server.c
+// ./server
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+
+#define SHM_SIZE 1024
+
+int main() {
+    int shmid;
+    char *shm_ptr;
+    key_t key = 1234; // Shared memory key
+
+    // Create shared memory segment
+    shmid = shmget(key, SHM_SIZE, IPC_CREAT | 0666);
+    if (shmid < 0) {
+        perror("shmget failed");
+        exit(1);
+    }
+
+    // Attach to the shared memory segment
+    shm_ptr = shmat(shmid, NULL, 0);
+    if (shm_ptr == (char *) -1) {
+        perror("shmat failed");
+        exit(1);
+    }
+
+    // Write a message to shared memory
+    const char *message = "Hello from the server!";
+    strncpy(shm_ptr, message, SHM_SIZE);
+
+    // Detach from shared memory
+    shmdt(shm_ptr);
+    printf("Server: Message written to shared memory.\n");
+    printf("By Onkar - T1905308657\n");
+
+    return 0;
+}
+
+// ----------------------------------------------------------------
+
+
+// Make: nano client.c
+// gcc -o client client.c
+// ./client
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+
+#define SHM_SIZE 1024
+
+int main() {
+    int shmid;
+    char *shm_ptr;
+    key_t key = 1234; // Shared memory key
+
+    // Get the shared memory segment
+    shmid = shmget(key, SHM_SIZE, 0666);
+    if (shmid < 0) {
+        perror("shmget failed");
+        exit(1);
+    }
+
+    // Attach to the shared memory segment
+    shm_ptr = shmat(shmid, NULL, 0);
+    if (shm_ptr == (char *) -1) {
+        perror("shmat failed");
+        exit(1);
+    }
+
+    // Read the message from shared memory
+    printf("Client: Message read from shared memory: %s\n", shm_ptr);
+
+    // Detach from shared memory
+    shmdt(shm_ptr);
+    printf("By Onkar - T1905308657\n");
+
+    return 0;
+}
+
+
+
+// OUTPUT
+
+// Server: Message written to shared memory.
+// By Onkar - T1905308657
+
+// Client: Message read from shared memory: Hello from the server!
+// By Onkar - T1905308657
+
+
+
+
+-------------------------------------------------------------------------
+
+
+
+15)
+//  Implement the C program for Disk Scheduling Algorithms: SSTF considering the 
+// initial head position moving away from the spindle
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_REQUESTS 100
+
+void sstf(int requests[], int n, int initial) {
+    int completed[MAX_REQUESTS] = {0}; // Track completed requests
+    int current = initial, total_seek = 0;
+
+    for (int i = 0; i < n; i++) {
+        int min_distance = __INT_MAX__, index = -1;
+
+        // Find the closest request
+        for (int j = 0; j < n; j++) {
+            if (!completed[j]) {
+                int distance = abs(requests[j] - current);
+                if (distance < min_distance) {
+                    min_distance = distance;
+                    index = j;
+                }
+            }
+        }
+
+        // Move to the closest request
+        if (index != -1) {
+            total_seek += min_distance;
+            current = requests[index];
+            completed[index] = 1; // Mark as completed
+            printf("Served request: %d, Current head position: %d\n", current, current);
+        }
+    }
+
+    printf("Total seek time: %d\n", total_seek);
+    printf("By Onkar - T1905308657\n");
+}
+
+int main() {
+    int requests[MAX_REQUESTS], n, initial;
+
+    printf("Enter the number of requests: ");
+    scanf("%d", &n);
+    printf("Enter the requests:\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &requests[i]);
+    }
+    printf("Enter the initial head position: ");
+    scanf("%d", &initial);
+
+    sstf(requests, n, initial);
+
+    return 0;
+}
+
+
+// OUTPUT
+
+// Enter the number of requests: 5
+// Enter the requests:
+// 100
+// 180
+// 30
+// 50
+// 200
+// Enter the initial head position: 70
+
+// Served request: 100, Current head position: 100
+// Served request: 180, Current head position: 180
+// Served request: 200, Current head position: 200
+// Served request: 50, Current head position: 50
+// Served request: 30, Current head position: 30
+// Total seek time: 130
+// By Onkar - T1905308657
+
+
+
+
+--------------------------------------------------------------------
+
+
+
+
+16)
+// Implement the C program for Disk Scheduling Algorithms: SCAN considering the 
+// initial head position moving away from the spindle.
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_REQUESTS 100
+
+void scan(int requests[], int n, int initial, int direction) {
+    int total_seek = 0, current = initial;
+    int completed[MAX_REQUESTS] = {0}; // Track completed requests
+
+    // Sort requests
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (requests[j] > requests[j + 1]) {
+                int temp = requests[j];
+                requests[j] = requests[j + 1];
+                requests[j + 1] = temp;
+            }
+        }
+    }
+
+    // Move in the specified direction
+    if (direction == 1) { // Moving towards higher numbers
+        for (int i = 0; i < n; i++) {
+            if (requests[i] >= current) {
+                total_seek += abs(current - requests[i]);
+                current = requests[i];
+                completed[i] = 1;
+                printf("Served request: %d, Current head position: %d\n", current, current);
+            }
+        }
+        // Move to the end and then back to the lowest request
+        total_seek += abs(current - requests[n - 1]);
+        current = requests[n - 1];
+
+        // Serve remaining requests in reverse
+        for (int i = n - 1; i >= 0; i--) {
+            if (!completed[i]) {
+                total_seek += abs(current - requests[i]);
+                current = requests[i];
+                printf("Served request: %d, Current head position: %d\n", current, current);
+            }
+        }
+    }
+
+    printf("Total seek time: %d\n", total_seek);
+    printf("By Onkar - T1905308657\n");
+}
+
+int main() {
+    int requests[MAX_REQUESTS], n, initial, direction;
+
+    printf("Enter the number of requests: ");
+    scanf("%d", &n);
+    printf("Enter the requests:\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &requests[i]);
+    }
+    printf("Enter the initial head position: ");
+    scanf("%d", &initial);
+    printf("Enter direction (1 for up, -1 for down): ");
+    scanf("%d", &direction);
+
+    scan(requests, n, initial, direction);
+
+    return 0;
+}
+
+
+
+// OUTPUT
+
+// Enter the number of requests: 5
+// Enter the requests:
+// 100
+// 180
+// 30
+// 50
+// 200
+// Enter the initial head position: 70
+// Enter direction (1 for up, -1 for down): 1
+
+// Served request: 100, Current head position: 100
+// Served request: 180, Current head position: 180
+// Served request: 200, Current head position: 200
+// Served request: 50, Current head position: 50
+// Served request: 30, Current head position: 30
+// Total seek time: 130
+// By Onkar - T1905308657
+
+
+
+
+--------------------------------------------------------------------
+
+
+
+17)
+// Implement the C program for Disk Scheduling Algorithms: C-Look considering the 
+// initial head position moving away from the spindle.
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_REQUESTS 100
+
+void clook(int requests[], int n, int initial) {
+    int total_seek = 0, current = initial;
+    int completed[MAX_REQUESTS] = {0}; // Track completed requests
+
+    // Sort requests
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (requests[j] > requests[j + 1]) {
+                int temp = requests[j];
+                requests[j] = requests[j + 1];
+                requests[j + 1] = temp;
+            }
+        }
+    }
+
+    // Serve requests in C-LOOK manner
+    for (int i = 0; i < n; i++) {
+        if (requests[i] >= current) {
+            total_seek += abs(current - requests[i]);
+            current = requests[i];
+            printf("Served request: %d, Current head position: %d\n", current, current);
+        }
+    }
+
+    // Jump to the first request after completing the last request
+    if (current < requests[n - 1]) {
+        total_seek += abs(current - requests[0]);
+        current = requests[0];
+        printf("Served request: %d, Current head position: %d\n", current, current);
+    }
+
+    // Serve remaining requests
+    for (int i = 0; i < n; i++) {
+        if (requests[i] >= current) {
+            total_seek += abs(current - requests[i]);
+            current = requests[i];
+            printf("Served request: %d, Current head position: %d\n", current, current);
+        }
+    }
+
+    printf("Total seek time: %d\n", total_seek);
+    printf("By Onkar - T1905308657\n");
+}
+
+int main() {
+    int requests[MAX_REQUESTS], n, initial;
+
+    printf("Enter the number of requests: ");
+    scanf("%d", &n);
+    printf("Enter the requests:\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &requests[i]);
+    }
+    printf("Enter the initial head position: ");
+    scanf("%d", &initial);
+
+    clook(requests, n, initial);
+
+    return 0;
+}
+
+
+
+// OUTPUT 
+
+// Enter the number of requests: 5
+// Enter the requests:
+// 100
+// 180
+// 30
+// 50
+// 200
+// Enter the initial head position: 70
+
+
+// Served request: 100, Current head position: 100
+// Served request: 180, Current head position: 180
+// Served request: 200, Current head position: 200
+// Served request: 30, Current head position: 30
+// Served request: 50, Current head position: 50
+// Total seek time: 130
+// By Onkar - T1905308657
+
+
+
+
+
+
