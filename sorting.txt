@@ -1,0 +1,141 @@
+-#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+void bubbleSort(int a[], int start, int end) {
+    for (int i = start; i < end - 1; i++)
+        for (int j = start; j < end - i - 1; j++)
+            if (a[j] > a[j + 1]) { int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t; }
+}
+
+int main() {
+    int a[] = {5, 2, 9, 1, 5, 6}, n = 6, mid = n / 2;
+    if (fork() == 0) { bubbleSort(a, mid, n); 
+return 0;
+ }  // Child sorts second half
+    bubbleSort(a, 0, mid); wait(NULL);  // Parent sorts first half
+    for (int i = 0; i < n; i++) 
+printf("%d ", a[i]);
+}
+‐-------------------------------------
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+void selectionSort(int a[], int s, int e) {
+    for (int i = s; i < e - 1; i++) for (int j = i + 1; j < e; j++)
+        if (a[j] < a[i]) { int t = a[i]; a[i] = a[j]; a[j] = t; }
+}
+
+int main() {
+    int a[] = {5, 2, 9, 1, 5, 6}, n = 6, m = n / 2;
+    if (fork() == 0) { selectionSort(a, m, n); 
+return 0; }
+    selectionSort(a, 0, m);
+ wait(NULL);
+    for (int i = 0; i < n; i++) 
+printf("%d ", a[i]);
+}
+
+
+
+-------------------------------
+
+explanation of code:
+
+Here’s a line-by-line explanation:
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+Includes libraries for input/output, process control, and waiting.
+
+void selectionSort(int a[], int s, int e) {
+
+Defines a function to sort an array from index s to e using selection sort.
+
+for (int i = s; i < e - 1; i++) for (int j = i + 1; j < e; j++)
+        if (a[j] < a[i]) { int t = a[i]; a[i] = a[j]; a[j] = t; }
+
+Implements selection sort by finding the smallest element in the range and swapping it with the start.
+
+int main() {
+
+Begins the main function.
+
+int a[] = {5, 2, 9, 1, 5, 6}, n = 6, m = n / 2;
+
+Initializes an integer array a, sets its size n, and calculates the midpoint m.
+
+if (fork() == 0) { selectionSort(a, m, n); return 0; }
+
+Creates a child process; if in the child, it sorts the second half of a and exits.
+
+selectionSort(a, 0, m); wait(NULL);
+
+In the parent process, it sorts the first half of a and waits for the child to finish.
+
+for (int i = 0; i < n; i++) printf("%d ", a[i]);
+
+Prints the entire array after both halves are sorted.
+
+}
+
+Ends the program.
+
+-----------------------
+Bubble sort
+
+
+Here’s a line-by-line explanation of the given bubble sort code with fork():
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+Includes necessary libraries for input/output, process control (fork()), and waiting for child processes (wait()).
+
+void bubbleSort(int a[], int start, int end) {
+
+Defines the bubbleSort function to sort a portion of the array from start to end using the bubble sort algorithm.
+
+for (int i = start; i < end - 1; i++)
+        for (int j = start; j < end - i - 1; j++)
+            if (a[j] > a[j + 1]) { int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t; }
+
+Implements bubble sort by comparing adjacent elements and swapping them if they are out of order.
+
+int main() {
+
+Starts the main function.
+
+int a[] = {5, 2, 9, 1, 5, 6}, n = 6, mid = n / 2;
+
+Initializes an array a[] of integers, calculates the length n of the array, and divides it into two halves by setting mid to half the array size.
+
+if (fork() == 0) { bubbleSort(a, mid, n); return 0; }  // Child sorts second half
+
+Creates a child process with fork(). In the child process, it sorts the second half of the array from mid to n and then exits.
+
+bubbleSort(a, 0, mid); wait(NULL);  // Parent sorts first half
+
+In the parent process, it sorts the first half of the array from 0 to mid and then waits for the child process to finish using wait(NULL).
+
+for (int i = 0; i < n; i++) printf("%d ", a[i]);
+
+After both processes have completed sorting, the parent prints the entire sorted array.
+
+}
+
+Ends the main function.
+
+------------------------
+
+In C, wait() is used in the parent process to wait for the child process to complete before continuing. Here's the one-line explanation:
+
+wait() suspends the parent process until all of its child processes have finished execution. If wait(NULL) is used, it waits for any child process and doesn't require processing the exit status.
+
+
+
